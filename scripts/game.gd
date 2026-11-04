@@ -9,12 +9,14 @@ const PLAYER_SPEED := 88.0
 const DASH_SPEED := 270.0
 const STONE_TEX: Texture2D = preload("res://assets/art/stone_v3.png")
 const WATER_TEX: Texture2D = preload("res://assets/art/water_v2.png")
-const KARIAN_TEX: Texture2D = preload("res://assets/art/karian.png")
-const MARA_TEX: Texture2D = preload("res://assets/art/mara.png")
-const MERCENARY_TEX: Texture2D = preload("res://assets/art/mercenary.png")
-const LIGHTHOUSE_TEX: Texture2D = preload("res://assets/art/lighthouse.png")
-const WAREHOUSE_TEX: Texture2D = preload("res://assets/art/warehouse.png")
-const TITLE_TEX: Texture2D = preload("res://assets/art/title_harbor.png")
+const KARIAN_TEX: Texture2D = preload("res://assets/art/karian_lowdetail.png")
+const MARA_TEX: Texture2D = preload("res://assets/art/mara_lowdetail.png")
+const KARIAN_PORTRAIT: Texture2D = preload("res://assets/art/karian_portrait.png")
+const MARA_PORTRAIT: Texture2D = preload("res://assets/art/mara_portrait.png")
+const MERCENARY_TEX: Texture2D = preload("res://assets/art/mercenary_lowdetail.png")
+const LIGHTHOUSE_TEX: Texture2D = preload("res://assets/art/lighthouse_lowdetail.png")
+const WAREHOUSE_TEX: Texture2D = preload("res://assets/art/warehouse_lowdetail.png")
+const TITLE_TEX: Texture2D = preload("res://assets/art/title_harbor_lowdetail.png")
 const SLASH_A: AudioStream = preload("res://assets/audio/knifeSlice.ogg")
 const SLASH_B: AudioStream = preload("res://assets/audio/knifeSlice2.ogg")
 const HIT_SOUND: AudioStream = preload("res://assets/audio/chop.ogg")
@@ -64,6 +66,7 @@ var resonance := 35.0
 var invulnerability := 0.0
 var attack_cooldown := 0.0
 var attack_flash := 0.0
+var attack_duration := 0.2
 var combo_window := 0.0
 var combo_step := 0
 var parry_window := 0.0
@@ -72,6 +75,7 @@ var dash_time := 0.0
 var dash_direction := Vector2.RIGHT
 var special_flash := 0.0
 var walk_phase := 0.0
+var player_run_blend := 0.0
 var player_moving := false
 var time_passed := 0.0
 var enemies: Array[Dictionary] = []
@@ -100,6 +104,7 @@ func reset_game() -> void:
 	invulnerability = 0.0
 	attack_cooldown = 0.0
 	attack_flash = 0.0
+	attack_duration = 0.2
 	combo_window = 0.0
 	combo_step = 0
 	parry_window = 0.0
@@ -107,6 +112,7 @@ func reset_game() -> void:
 	dash_time = 0.0
 	special_flash = 0.0
 	walk_phase = 0.0
+	player_run_blend = 0.0
 	player_moving = false
 	notice = ""
 	notice_time = 0.0
@@ -125,7 +131,8 @@ func make_enemy(where: Vector2, kind: String, health: int, speed: float) -> Dict
 		"pos": where, "kind": kind, "hp": health, "max_hp": health,
 		"speed": speed, "cooldown": 0.0, "windup": 0.0,
 		"stun": 0.0, "flash": 0.0, "alive": true,
-		"facing": Vector2.LEFT,
+		"facing": Vector2.LEFT, "run_phase": 0.0,
+		"run_blend": 0.0, "attack_time": 0.0,
 	}
 
 
@@ -224,13 +231,19 @@ func update_game(delta: float) -> void:
 		move_player(dash_direction * DASH_SPEED * delta)
 	elif movement != Vector2.ZERO:
 		player_moving = true
-		walk_phase += delta * 12.0
 		move_player(movement.normalized() * PLAYER_SPEED * delta)
 	else:
 		player_moving = false
+	advance_player_run_animation(delta, player_moving, dash_time > 0.0)
 
 	for enemy in enemies:
 		update_enemy(enemy, delta)
+
+
+func advance_player_run_animation(delta: float, moving: bool, dashing: bool) -> void:
+	if moving:
+		walk_phase += delta * (22.0 if dashing else 16.0)
+	player_run_blend = move_toward(player_run_blend, 1.0 if moving else 0.0, delta * 12.0)
 
 
 func move_player(offset: Vector2) -> void:
@@ -260,6 +273,8 @@ func update_enemy(enemy: Dictionary, delta: float) -> void:
 	enemy["cooldown"] = maxf(0.0, enemy["cooldown"] - delta)
 	enemy["stun"] = maxf(0.0, enemy["stun"] - delta)
 	enemy["flash"] = maxf(0.0, enemy["flash"] - delta)
+	enemy["attack_time"] = maxf(0.0, enemy["attack_time"] - delta)
+	enemy["run_blend"] = move_toward(float(enemy["run_blend"]), 0.0, delta * 10.0)
 	var to_player = player_pos - enemy["pos"]
 	var distance: float = to_player.length()
 	if distance > 0.1:
@@ -267,10 +282,13 @@ func update_enemy(enemy: Dictionary, delta: float) -> void:
 	if enemy["stun"] > 0.0:
 		enemy["windup"] = 0.0
 		return
+	if enemy["attack_time"] > 0.0:
+		return
 	if enemy["windup"] > 0.0:
 		enemy["windup"] -= delta
 		if enemy["windup"] <= 0.0:
 			enemy["windup"] = 0.0
+			enemy["attack_time"] = 0.23
 			enemy["cooldown"] = 1.15 if enemy["kind"] == "налётчик" else 1.4
 			if distance < 29.0:
 				resolve_enemy_hit(enemy)
@@ -283,6 +301,8 @@ func update_enemy(enemy: Dictionary, delta: float) -> void:
 		var candidate: Vector2 = enemy["pos"] + step
 		if is_walkable(candidate):
 			enemy["pos"] = candidate
+			enemy["run_blend"] = move_toward(float(enemy["run_blend"]), 1.0, delta * 20.0)
+			enemy["run_phase"] += delta * 15.0
 
 
 func resolve_enemy_hit(enemy: Dictionary) -> void:
@@ -315,7 +335,8 @@ func try_attack() -> void:
 	play_sound(SLASH_A if combo_step == 1 else SLASH_B, -11.0, 1.08 if combo_step == 3 else 1.0)
 	combo_window = 0.72
 	attack_cooldown = 0.22 if combo_step < 3 else 0.4
-	attack_flash = 0.18
+	attack_duration = 0.21 if combo_step < 3 else 0.27
+	attack_flash = attack_duration
 	var reach := 30.0 if combo_step < 3 else 38.0
 	var damage := 1 if combo_step < 3 else 2
 	var hits := 0
@@ -643,11 +664,32 @@ func draw_enemy(enemy: Dictionary) -> void:
 	var tint := Color(1.0, 0.96, 0.86) if enemy["kind"] == "ветеран" else Color.WHITE
 	if enemy["flash"] > 0.0:
 		tint = Color(1.0, 0.74, 0.74)
-	var idle_bob := sin(time_passed * 2.3 + enemy["pos"].x * 0.02) * 0.55
-	draw_texture_rect(MERCENARY_TEX, Rect2(enemy["pos"].x - 15, enemy["pos"].y - 33 + idle_bob, 30, 41), false, tint)
+	var run_blend: float = enemy["run_blend"]
+	var stride: float = sin(float(enemy["run_phase"])) * run_blend
+	var idle_bob := sin(time_passed * 2.3 + enemy["pos"].x * 0.02) * 0.55 * (1.0 - run_blend)
+	var bob := idle_bob - absf(stride) * 1.8
+	var attack_strength := 0.0
+	if enemy["attack_time"] > 0.0:
+		attack_strength = sin(PI * (1.0 - float(enemy["attack_time"]) / 0.23))
+	var flip := -1.0 if enemy["facing"].x < 0.0 else 1.0
+	var lean := stride * 0.075 + attack_strength * flip * 0.14
+	var lunge: Vector2 = enemy["facing"] * attack_strength * 4.0
+	draw_set_transform(enemy["pos"] - camera_pos + lunge + Vector2(0.0, bob), lean, Vector2(flip, 1.0))
+	draw_texture_rect(MERCENARY_TEX, Rect2(-15, -33, 30, 41), false, tint)
+	draw_set_transform(-camera_pos)
+	if run_blend > 0.05:
+		var step_color := Color(0.33, 0.61, 0.68, 0.22 * run_blend)
+		draw_line(enemy["pos"] + Vector2(-7, 5), enemy["pos"] + Vector2(-7 - stride * 3.0, 5), step_color, 1.0)
+		draw_line(enemy["pos"] + Vector2(7, 5), enemy["pos"] + Vector2(7 + stride * 3.0, 5), step_color, 1.0)
 	if enemy["windup"] > 0.0:
-		draw_arc(enemy["pos"], 21.0, -PI * 0.2, PI * 1.2, 20, RED, 2.0)
+		var pulse := 0.55 + 0.45 * sin(time_passed * 16.0)
+		draw_arc(enemy["pos"], 21.0, -PI * 0.2, PI * 1.2, 20, Color(RED, pulse), 2.0)
 		draw_text_world(enemy["pos"] + Vector2(-3, -29), "!", 13, RED)
+	if enemy["attack_time"] > 0.0:
+		var progress := 1.0 - float(enemy["attack_time"]) / 0.23
+		var blade_angle: float = enemy["facing"].angle() - 1.05 + progress * 1.55
+		var slash_color := Color(RED, 0.4 + 0.5 * sin(PI * progress))
+		draw_arc(enemy["pos"] + enemy["facing"] * 8.0, 22.0, blade_angle, blade_angle + 0.78, 14, slash_color, 3.0)
 	if enemy["hp"] < enemy["max_hp"]:
 		draw_rect(Rect2(enemy["pos"].x - 10, enemy["pos"].y - 27, 20, 3), INK)
 		draw_rect(Rect2(enemy["pos"].x - 9, enemy["pos"].y - 26, 18.0 * float(enemy["hp"]) / float(enemy["max_hp"]), 1), RED)
@@ -660,13 +702,32 @@ func draw_player() -> void:
 		for i in range(1, 4):
 			draw_rect(Rect2(player_pos.x - dash_direction.x * i * 7.0 - 7, player_pos.y - dash_direction.y * i * 7.0 - 16, 14, 19), Color(0.39, 0.81, 0.84, 0.2))
 	draw_ellipse_shadow(player_pos + Vector2(0, 8))
-	var bob := sin(walk_phase) * 1.3 if player_moving else sin(time_passed * 2.6) * 0.9
-	var sway := 0.0 if player_moving else sin(time_passed * 1.3) * 0.8
-	var breath := 0.0 if player_moving else sin(time_passed * 2.6 + 0.7) * 0.6
-	draw_texture_rect(KARIAN_TEX, Rect2(player_pos.x - 19 + sway, player_pos.y - 42 + bob - breath, 38, 50 + breath), false)
+	var stride := sin(walk_phase) * player_run_blend
+	var idle_weight := 1.0 - player_run_blend
+	var bob := -absf(stride) * 2.1 + sin(time_passed * 2.6) * 0.7 * idle_weight
+	var sway := sin(time_passed * 1.3) * 0.8 * idle_weight
+	var breath := sin(time_passed * 2.6 + 0.7) * 0.6 * idle_weight
+	var attack_strength := 0.0
 	if attack_flash > 0.0:
-		var arc_radius := 23.0 + float(combo_step) * 4.0
-		draw_arc(player_pos, arc_radius, facing.angle() - 0.9, facing.angle() + 0.9, 16, BLUE, 3.0)
+		attack_strength = sin(PI * (1.0 - attack_flash / attack_duration))
+	var flip := -1.0 if facing.x < 0.0 else 1.0
+	var combo_side := -1.0 if combo_step == 2 else 1.0
+	var lean := stride * 0.07 + attack_strength * combo_side * flip * 0.16
+	var lunge := facing * attack_strength * 5.0
+	draw_set_transform(player_pos - camera_pos + lunge + Vector2(sway, bob), lean, Vector2(flip, 1.0))
+	draw_texture_rect(KARIAN_TEX, Rect2(-19, -42 - breath, 38, 50 + breath), false)
+	draw_set_transform(-camera_pos)
+	if player_run_blend > 0.05:
+		var wake_color := Color(BLUE, 0.23 * player_run_blend)
+		draw_line(player_pos + Vector2(-9, 5), player_pos + Vector2(-9 - stride * 4.0, 5), wake_color, 1.0)
+		draw_line(player_pos + Vector2(9, 5), player_pos + Vector2(9 + stride * 4.0, 5), wake_color, 1.0)
+	if attack_flash > 0.0:
+		var progress := 1.0 - attack_flash / attack_duration
+		var arc_radius := 25.0 + float(combo_step) * 3.0
+		var slash_angle := facing.angle() + combo_side * (-1.1 + progress * 1.8)
+		var slash_alpha := 0.4 + 0.55 * sin(PI * progress)
+		draw_arc(player_pos + facing * 9.0, arc_radius, minf(slash_angle, slash_angle + combo_side * 0.85), maxf(slash_angle, slash_angle + combo_side * 0.85), 16, Color(BLUE, slash_alpha), 4.0)
+		draw_arc(player_pos + facing * 7.0, arc_radius - 7.0, minf(slash_angle - combo_side * 0.22, slash_angle + combo_side * 0.5), maxf(slash_angle - combo_side * 0.22, slash_angle + combo_side * 0.5), 14, Color(PAPER, slash_alpha * 0.8), 2.0)
 	if parry_window > 0.0:
 		draw_arc(player_pos + facing * 5.0, 16.0, facing.angle() - 1.1, facing.angle() + 1.1, 16, GOLD, 2.0)
 	if special_flash > 0.0:
@@ -728,7 +789,7 @@ func draw_hud() -> void:
 
 
 func draw_title() -> void:
-	draw_texture_rect_region(TITLE_TEX, Rect2(0, 0, 640, 360), Rect2(0, 0, 1577, 887))
+	draw_texture_rect_region(TITLE_TEX, Rect2(0, 0, 640, 360), Rect2(Vector2.ZERO, TITLE_TEX.get_size()))
 	draw_rect(Rect2(0, 0, 355, 360), Color(0.02, 0.05, 0.09, 0.78))
 	draw_rect(Rect2(355, 0, 72, 360), Color(0.02, 0.05, 0.09, 0.36))
 	draw_rect(Rect2(0, 0, 640, 4), CORAL)
@@ -748,25 +809,47 @@ func draw_dialogue() -> void:
 	if dialogue_index >= dialogue.size():
 		return
 	var line := dialogue[dialogue_index]
-	draw_rect(Rect2(20, 252, 600, 96), INK)
-	draw_rect(Rect2(23, 255, 594, 90), Color("#203b4a"))
-	draw_rect(Rect2(23, 255, 594, 3), CORAL)
-	draw_rect(Rect2(29, 263, 64, 76), INK)
-	draw_rect(Rect2(31, 265, 60, 72), CORAL.darkened(0.55))
-	if line["who"] == "Кэриан":
-		draw_texture_rect(KARIAN_TEX, Rect2(34, 265, 54, 72), false)
-	elif line["who"] == "Страж Мара":
-		draw_texture_rect(MARA_TEX, Rect2(36, 265, 50, 72), false)
-	else:
-		draw_rect(Rect2(48, 279, 26, 40), PAPER)
-		draw_rect(Rect2(53, 288, 16, 2), CORAL)
-		draw_rect(Rect2(53, 296, 16, 2), STONE)
-		draw_circle(Vector2(65, 310), 3.0, CORAL)
-	draw_text_ui(Vector2(105, 274), line["who"], 14, GOLD)
+	draw_rect(Rect2(13, 237, 614, 119), INK)
+	draw_rect(Rect2(16, 240, 608, 113), Color("#203b4a"))
+	draw_rect(Rect2(16, 240, 608, 2), GOLD)
+	draw_rect(Rect2(17, 351, 606, 2), CORAL.darkened(0.35))
+	var has_mara := false
+	var has_document := false
+	for dialogue_line in dialogue:
+		if dialogue_line["who"] == "Страж Мара":
+			has_mara = true
+		if dialogue_line["who"] == "Промокший приказ":
+			has_document = true
+	var karian_active: bool = line["who"] == "Кэриан"
+	var mara_active: bool = line["who"] == "Страж Мара"
+	var left_border := GOLD if karian_active else CORAL.darkened(0.35)
+	draw_rect(Rect2(21, 244, 89, 102), left_border)
+	draw_rect(Rect2(23, 246, 85, 98), Color("#112432"))
+	draw_texture_rect(KARIAN_PORTRAIT, Rect2(34, 246 - (2 if karian_active else 0), 64, 96), false, Color.WHITE if karian_active else Color(0.58, 0.65, 0.7, 0.75))
+	draw_rect(Rect2(23, 328, 85, 16), Color(0.04, 0.09, 0.14, 0.9))
+	draw_text_ui(Vector2(44, 340), "КЭРИАН", 10, GOLD if karian_active else PAPER.darkened(0.28))
+	if has_mara or has_document:
+		var right_border := GOLD if mara_active or line["who"] == "Промокший приказ" else CORAL.darkened(0.35)
+		draw_rect(Rect2(530, 244, 89, 102), right_border)
+		draw_rect(Rect2(532, 246, 85, 98), Color("#112432"))
+		if has_mara:
+			draw_texture_rect(MARA_PORTRAIT, Rect2(544, 246 - (2 if mara_active else 0), 64, 96), false, Color.WHITE if mara_active else Color(0.58, 0.65, 0.7, 0.75))
+			draw_rect(Rect2(532, 328, 85, 16), Color(0.04, 0.09, 0.14, 0.9))
+			draw_text_ui(Vector2(558, 340), "МАРА", 10, GOLD if mara_active else PAPER.darkened(0.28))
+		else:
+			draw_rect(Rect2(558, 266, 31, 48), PAPER)
+			draw_rect(Rect2(563, 278, 21, 2), CORAL)
+			draw_rect(Rect2(563, 286, 21, 2), STONE)
+			draw_rect(Rect2(563, 294, 16, 2), STONE)
+			draw_circle(Vector2(580, 306), 4.0, CORAL)
+			draw_rect(Rect2(532, 328, 85, 16), Color(0.04, 0.09, 0.14, 0.9))
+			draw_text_ui(Vector2(554, 340), "ПРИКАЗ", 10, PAPER.darkened(0.1))
+	draw_text_ui(Vector2(119, 260), line["who"], 13, GOLD)
+	draw_line(Vector2(119, 268), Vector2(518, 268), CORAL.darkened(0.25), 1.0)
 	var text_lines: PackedStringArray = line["text"].split("\n")
 	for i in range(text_lines.size()):
-		draw_text_ui(Vector2(105, 294 + i * 17), text_lines[i], 12, PAPER)
-	draw_text_ui(Vector2(513, 337), "E / Enter  ›", 10, BLUE)
+		draw_text_ui(Vector2(119, 289 + i * 18), text_lines[i], 12, PAPER)
+	draw_text_ui(Vector2(445, 341), "E / Enter  ›", 10, BLUE)
 
 
 func draw_overlay(heading: String, hint: String) -> void:
@@ -778,7 +861,7 @@ func draw_overlay(heading: String, hint: String) -> void:
 
 
 func draw_victory() -> void:
-	draw_texture_rect_region(TITLE_TEX, Rect2(0, 0, 640, 360), Rect2(0, 0, 1577, 887))
+	draw_texture_rect_region(TITLE_TEX, Rect2(0, 0, 640, 360), Rect2(Vector2.ZERO, TITLE_TEX.get_size()))
 	draw_rect(Rect2(0, 0, 640, 360), Color(0.02, 0.05, 0.08, 0.68))
 	draw_rect(Rect2(29, 30, 582, 300), INK)
 	draw_rect(Rect2(33, 34, 574, 292), Color("#1b3948"))

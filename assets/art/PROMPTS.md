@@ -1,6 +1,6 @@
 # Художественные материалы
 
-Исходные восемь PNG созданы 2 ноября 2026 года, а три варианта фактур — 3 ноября 2026 года встроенным инструментом imagegen для этого проекта. Внешние изображения и чужие персонажи как референсы не использовались. Исходные файлы находятся рядом с этим документом. В игре сейчас используются `stone_v3.png` и `water_v2.png`; `stone.png`, `stone_v2.png` и `water.png` сохранены как предыдущие варианты. Ниже записаны запросы, чтобы художественное направление можно было продолжить в будущих итерациях.
+Исходные восемь PNG созданы 2 ноября 2026 года, три варианта фактур — 3 ноября, а два диалоговых портрета и шесть новых игровых изображений — 4 ноября 2026 года встроенным инструментом imagegen для этого проекта. Внешние изображения и чужие персонажи как референсы не использовались; новые изображения опираются на уже существующие игровые спрайты и утверждённые портреты. Исходные файлы находятся рядом с этим документом. В игре сейчас используются `stone_v3.png`, `water_v2.png` и изображения с суффиксом `_lowdetail`; прежние варианты сохранены. Ниже записаны запросы, чтобы художественное направление можно было продолжить в будущих итерациях.
 
 ## `stone.png`
 
@@ -126,4 +126,126 @@ Style/medium: restrained modern indie pixel art, crisp chunky pixels, limited 8-
 Composition/framing: square top-down orthographic repeatable texture, about 16 to 20 stone columns across the canvas, subtle stagger between rows, seamless repeat on all edges, no focal motif.
 Color palette: midnight blue gray and desaturated slate, occasional muted burgundy stone at less than 5% coverage, very few warm highlights.
 Constraints: flat game-ready floor texture, no perspective, no building, no character, no lettering, no logo, no watermark.
+```
+
+## `karian_portrait.png` — диалоговый портрет
+
+Режим: `stylized-concept`. Референс персонажа и костюма: `karian.png`.
+
+```text
+Use case: stylized-concept
+Asset type: dialogue portrait for a dark-fantasy 2D pixel-art RPG, displayed at 70x90 game pixels
+Input images: Image 1 is identity and costume reference only, not an edit target. Preserve this same young prince Karian: tousled dark hair, pale face, midnight blue and dark teal armor, burgundy cloak.
+Primary request: a clean chest-up pixel-art portrait of Karian, looking slightly to the RIGHT toward another portrait in the dialogue panel. Calm determined expression, one shoulder visible, no swords in frame.
+Style/medium: restrained chunky pixel art with limited palette, broad clear clusters and strong silhouette, less detail than the reference sprite, readable at small scale. No painterly gradients, no tiny highlights or micro-texture.
+Composition/framing: centered chest-up cutout with generous transparent padding; head fully visible, no cropping. Cold rainy-night blue with a small warm lantern rim-light.
+Constraints: genuinely transparent background; no text, no frame, no UI, no other character, no watermark.
+```
+
+## `mara_portrait.png` — диалоговый портрет
+
+Режим: `stylized-concept`. Референс персонажа и костюма: `mara.png`.
+
+```text
+Use case: stylized-concept
+Asset type: dialogue portrait for a dark-fantasy 2D pixel-art RPG, displayed at 70x90 game pixels
+Input images: Image 1 is identity and costume reference only, not an edit target. Preserve this same female harbor guard Mara: dark hair tied up, stern face, burgundy armor, dark slate scarf and brass shoulder details.
+Primary request: a clean chest-up pixel-art portrait of Mara, looking slightly to the LEFT toward another portrait in the dialogue panel. Serious but humane expression, one armored shoulder visible, no spear in frame.
+Style/medium: restrained chunky pixel art with limited palette, broad clear clusters and strong silhouette, less detail than the reference sprite, readable at small scale. No painterly gradients, no tiny highlights or micro-texture.
+Composition/framing: centered chest-up cutout with generous transparent padding; head fully visible, no cropping. Cold rainy-night blue with a small warm lantern rim-light.
+Constraints: genuinely transparent background; no text, no frame, no UI, no other character, no watermark.
+```
+
+## Единый крупнопиксельный стиль — 4 ноября 2026
+
+Все шесть изображений созданы встроенным imagegen. Старые ассеты оставлены как референсы и запасные версии. Для персонажей и зданий запрошен прозрачный фон, для панорамы — непрозрачный.
+
+### `karian_lowdetail.png`
+
+Референсы: `karian_portrait.png` (стиль), `karian.png` (костюм и оружие).
+
+```text
+Use case: stylized-concept
+Asset type: replacement playable character sprite for a 2D fantasy RPG; displayed at only 38x50 logical pixels.
+Input images: Image 1 is Karian's approved dialogue portrait and the PRIMARY style reference; Image 2 is his previous full-body sprite, identity/costume/dual-sword reference only.
+Primary request: full-body Karian standing in a clear ready-to-run dual-sword pose, preserving his dark tousled hair, midnight-blue and dark-teal armor, small burgundy cloak and two silver swords. He must look like the same person as the portrait.
+Style/medium: the same restrained CHUNKY pixel art as Image 1; deliberately simplified into broad coherent 4-8 pixel color clusters at target display size, limited 10-12 colors, crisp stepped edges, no tiny decorative armor patterns, no fine strands, no microtexture, no smooth painterly gradients, no high-resolution illustration look.
+Composition/framing: single isolated full-body figure, steep three-quarter top-down game-camera view, both boots visible, centered, generous transparent padding. Silhouette legible when shrunk to 38x50 pixels.
+Lighting/mood: rainy night, subdued blue shadows and one small warm rim highlight.
+Constraints: genuinely transparent background, no ground/shadow, no other character, no text/UI/watermark, no detached weapons.
+```
+
+### `mara_lowdetail.png`
+
+Референсы: `mara_portrait.png` (стиль), `mara.png` (костюм и копьё).
+
+```text
+Use case: stylized-concept
+Asset type: replacement guard NPC sprite for a 2D fantasy RPG; displayed at only 30x43 logical pixels.
+Input images: Image 1 is Mara's approved dialogue portrait and the PRIMARY style reference; Image 2 is her previous full-body sprite, identity/costume/spear reference only.
+Primary request: full-body harbor guard Mara in a calm standing pose, preserving her dark hair tied up, burgundy armor, dark slate scarf, brass shoulder trim and one long spear. Same person as the portrait.
+Style/medium: the same restrained CHUNKY pixel art as Image 1; deliberately simplified into broad coherent color clusters, limited 10-12 colors, crisp stepped edges, no tiny armor ornament, no thin texture, no painterly gradients, no high-resolution illustration look.
+Composition/framing: one isolated full-body figure, steep three-quarter top-down game-camera view, both boots and spear fully visible, centered, generous transparent padding. Strong readable silhouette at 30x43 pixels.
+Lighting/mood: rainy night, subdued blue shadows and small warm lantern rim highlight.
+Constraints: genuinely transparent background, no ground/shadow, no additional figures, no text/UI/watermark.
+```
+
+### `mercenary_lowdetail.png`
+
+Референсы: `mercenary.png` (образ врага), `mara_portrait.png` (стиль).
+
+```text
+Use case: stylized-concept
+Asset type: replacement enemy sprite for a 2D fantasy RPG; displayed at only 30x41 logical pixels.
+Input images: Image 1 is the previous red-hooded mercenary, identity/costume reference. Image 2 is the approved Mara dialogue portrait, the PRIMARY pixel-art style reference.
+Primary request: one full-body red-hooded masked mercenary in a readable aggressive ready stance; dark charcoal armor, burgundy hood, one short blade, few muted brass accents. Preserve the enemy's recognizable red hood and silhouette.
+Style/medium: match Image 2's restrained CHUNKY pixel art, broad coherent color clusters, limited 10-12 colors, crisp stepped pixel edges, NO realistic metal reflections, NO tiny buckles or embroidered symbols, no microtexture, no gradients, no high-resolution illustration look.
+Composition/framing: one isolated full-body figure, steep three-quarter top-down game-camera view, both boots visible, centered with transparent padding; readable at 30x41 pixels.
+Lighting/mood: cold rainy port night with a restrained amber edge highlight.
+Constraints: genuinely transparent background, no ground/shadow, no other characters, no text/UI/watermark.
+```
+
+### `warehouse_lowdetail.png`
+
+Референсы: `warehouse.png` (архитектура), `karian_portrait.png` (стиль).
+
+```text
+Use case: stylized-concept
+Asset type: replacement top-down harbor warehouse sprite for a dark fantasy 2D RPG; displayed at only 130x114 logical pixels.
+Input images: Image 1 is the previous warehouse, reference for recognizable architecture and footprint ONLY. Image 2 is the approved Karian dialogue portrait, PRIMARY style reference for simplified chunky pixel clusters and limited palette.
+Primary request: one compact Water Kingdom harbor warehouse with slate walls, one broad burgundy roof, one or two warm amber windows and a dark door. Preserve the general silhouette and steep three-quarter view of Image 1, but radically simplify its detail to match Image 2.
+Style/medium: restrained CHUNKY pixel art, flat broad color clusters, 10-12 colors, crisp stepped pixel edges, simple large roof planes and wall blocks, no individual shingles, no tiny stone cracks, no fine trim, no photorealistic lighting, no microtexture. It must look native next to low-detail pixel-art water and paving, not like an illustration shrunk down.
+Composition/framing: one isolated complete building centered with transparent padding, steep three-quarter top-down game view; readable at 130x114 pixels.
+Lighting/mood: rainy night, subdued navy-slate palette, restrained warm window glow.
+Constraints: genuinely transparent background, no ground or island, no people, no text/UI/logo/watermark.
+```
+
+### `lighthouse_lowdetail.png`
+
+Референсы: `lighthouse.png` (архитектура), `mara_portrait.png` (стиль).
+
+```text
+Use case: stylized-concept
+Asset type: replacement ancient lighthouse sprite for a dark fantasy 2D RPG; displayed at only 94x112 logical pixels.
+Input images: Image 1 is the previous lighthouse, reference for recognizable silhouette/architecture ONLY. Image 2 is the approved Mara dialogue portrait, PRIMARY style reference for simplified chunky pixel clusters and palette.
+Primary request: one stout old stone harbor lighthouse, cylindrical slate tower, dark burgundy roof, simple amber lamp chamber, small arched doorway. Preserve the basic shape of Image 1; simplify all architecture drastically.
+Style/medium: restrained CHUNKY pixel art matching Image 2, broad flat color clusters, limited 10-12 colors, crisp stepped edges, large readable stone planes, no tiny brickwork, no railings with individual posts, no reflections, no microtexture, no photorealistic glow or high-resolution illustration look. Must blend with low-detail pixel-art water and paving.
+Composition/framing: single complete isolated tower, steep three-quarter top-down game view, centered with transparent padding; readable at 94x112 pixels.
+Lighting/mood: cold rainy night, amber beacon as one controlled focal light.
+Constraints: genuinely transparent background, no ground/island, no people, no text/UI/logo/watermark.
+```
+
+### `title_harbor_lowdetail.png`
+
+Референсы: `title_harbor.png` (композиция), `karian_portrait.png` (стиль).
+
+```text
+Use case: stylized-concept
+Asset type: replacement wide title-screen background for a 2D dark-fantasy pixel-art RPG.
+Input images: Image 1 is the previous title panorama, reference for geography and COMPOSITION ONLY: dark open sea and negative space on left, harbor city and tall lighthouse on right. Image 2 is the approved Karian dialogue portrait, PRIMARY style reference for chunky restrained pixel clusters.
+Primary request: rainy-night view of Tidhaven, island harbor of the Water Kingdom, with dark teal sea, low slate quay, clustered burgundy roofs and an amber lighthouse on the right. Preserve the broad scene arrangement of Image 1, but simplify architecture and waves dramatically to match Image 2's clear pixel-art language.
+Style/medium: restrained CHUNKY pixel art, limited 12-16 color palette, broad coherent clusters, stepped pixel edges, clear silhouettes, no individual windows or stonework beyond a few strong highlights, no glittering water microtexture, no painterly gradients, no high-res matte painting look.
+Composition/framing: wide landscape 16:9-ish; left half dark and quiet for title text, harbor and lighthouse confined mostly to right half; no character.
+Lighting/mood: rainy deep-blue night, small warm amber beacon and window accents.
+Constraints: no text, no title lettering, no logos/UI/watermark.
 ```

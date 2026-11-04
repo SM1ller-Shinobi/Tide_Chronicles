@@ -39,6 +39,29 @@ func run_checks() -> void:
 	game.try_attack()
 	if not check(enemy["hp"] == previous_hp - 1, "удар парным мечом"):
 		return
+	if not check(game.attack_flash > 0.0 and game.attack_duration > 0.0, "запуск анимации удара Кэриана"):
+		return
+	game.player_run_blend = 0.0
+	var phase_before_run: float = game.walk_phase
+	game.advance_player_run_animation(0.05, true, false)
+	if not check(game.player_run_blend > 0.0 and game.walk_phase > phase_before_run, "запуск анимации бега Кэриана"):
+		return
+	var blend_before_stop: float = game.player_run_blend
+	game.advance_player_run_animation(0.05, false, false)
+	if not check(game.player_run_blend < blend_before_stop, "плавная остановка бега Кэриана"):
+		return
+	var running_enemy: Dictionary = game.make_enemy(game.player_pos + Vector2(48, 0), "налётчик", 3, 55.0)
+	running_enemy["cooldown"] = 1.0
+	game.update_enemy(running_enemy, 0.05)
+	if not check(running_enemy["run_phase"] > 0.0 and running_enemy["run_blend"] > 0.0, "запуск анимации бега врага"):
+		return
+	running_enemy["pos"] = game.player_pos + Vector2(20, 0)
+	running_enemy["windup"] = 0.01
+	game.invulnerability = 1.0
+	game.update_enemy(running_enemy, 0.02)
+	if not check(running_enemy["attack_time"] > 0.0, "запуск анимации удара врага"):
+		return
+	game.invulnerability = 0.0
 	game.resonance = 80.0
 	game.try_dash()
 	if not check(game.dash_time > 0.0 and game.resonance == 60.0, "рывок расходует Резонанс"):
